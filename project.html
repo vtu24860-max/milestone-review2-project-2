@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerConnect Pro | Chennai Software Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .corporate-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
+        .status-badge { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; }
+        .tab-active { color: #4f46e5; border-bottom: 2px solid #4f46e5; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <section id="auth-page" class="min-h-screen flex items-center justify-center corporate-gradient p-6">
+        <div class="glass-card w-full max-w-[450px] rounded-3xl shadow-2xl p-10">
+            <div class="text-center mb-10">
+                <div class="bg-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/40">
+                    <i class="fas fa-briefcase text-white text-xl"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">CareerConnect<span class="text-indigo-600">Pro</span></h1>
+                <p class="text-slate-500 text-sm mt-2 font-medium">Chennai Software Hub v2026</p>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Corporate Email</label>
+                    <input type="email" id="login-email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="name@company.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Password</label>
+                    <input type="password" id="login-pass" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 transform hover:-translate-y-0.5">SIGN IN</button>
+                <p class="text-center text-sm text-slate-500">New seeker? <a href="#" onclick="toggleAuth(true)" class="text-indigo-600 font-bold hover:underline">Create Profile</a></p>
+            </form>
+
+            <form id="register-form" class="space-y-5 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Full Name</label>
+                    <input type="text" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Email Address</label>
+                    <input type="email" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Create Password</label>
+                    <input type="password" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                </div>
+                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-black transition shadow-lg">CREATE ACCOUNT</button>
+                <p class="text-center text-sm text-slate-500">Have account? <a href="#" onclick="toggleAuth(false)" class="text-indigo-600 font-bold hover:underline">Log In</a></p>
+            </form>
+        </div>
+    </section>
+
+    <section id="dashboard-page" class="hidden min-h-screen">
+        <nav class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold text-slate-900">CareerConnect<span class="text-indigo-600">Pro</span></span>
+            </div>
+            <div class="flex gap-8 text-xs font-bold uppercase tracking-widest text-slate-500">
+                <button onclick="showTab('browse')" id="tab-browse" class="tab-active py-2">Find Jobs</button>
+                <button onclick="showTab('applied')" id="tab-applied" class="py-2">Applied Roles</button>
+                <button onclick="location.reload()" class="text-red-500 py-2">Logout</button>
+            </div>
+        </nav>
+
+        <div id="browse-tab" class="max-w-6xl mx-auto p-10">
+            <div class="mb-12">
+                <h2 class="text-4xl font-extrabold text-slate-900 tracking-tight">Chennai Tech Corridor</h2>
+                <p class="text-slate-500 mt-2">Active engineering roles in OMR, Siruseri, and DLF Cybercity.</p>
+            </div>
+
+            <div id="job-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+        </div>
+
+        <div id="applied-tab" class="hidden max-w-6xl mx-auto p-10">
+            <h2 class="text-3xl font-bold text-slate-900 mb-8">Your Application Pipeline</h2>
+            <div id="applied-list" class="grid gap-4">
+                </div>
+        </div>
+    </section>
+
+    <div id="apply-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-md"></div>
+        <div class="relative bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-8 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Finalize Application</h2>
+            <p id="target-job-info" class="text-indigo-600 font-bold mb-8"></p>
+
+            <form id="application-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Personal Phone</label>
+                        <input type="text" required class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Chennai Address (Area)</label>
+                        <input type="text" required class="w-full p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g., Adyar, Velachery">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Technical Skill Set</label>
+                    <textarea required id="tech-skills" class="w-full p-4 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-indigo-500 h-24" placeholder="Spring Boot, Java, AWS, React..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Resume Upload (PDF Reference)</label>
+                    <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-slate-50 hover:border-indigo-500 transition cursor-pointer">
+                        <i class="fas fa-file-pdf text-3xl text-slate-300 mb-3"></i>
+                        <p class="text-sm text-slate-500">Click to upload your <span class="font-bold text-indigo-600">Resume.pdf</span></p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-4 font-bold text-slate-500">Cancel</button>
+                    <button type="submit" class="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-indigo-100">SUBMIT APPLICATION</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="thank-you" class="hidden fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center p-10 text-center">
+        <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6">
+            <i class="fas fa-check text-4xl text-emerald-600"></i>
+        </div>
+        <h2 class="text-4xl font-extrabold text-slate-900 mb-4">Application Successful!</h2>
+        <p class="text-slate-500 text-lg max-w-md mb-10">Thank you for applying. The hiring team at <span id="thank-company" class="font-bold text-indigo-600"></span> will review your technical skills shortly.</p>
+        <button onclick="goToDashboard()" class="bg-slate-900 text-white px-10 py-4 rounded-xl font-bold shadow-xl">Back to My Dashboard</button>
+    </div>
+
+    <script>
+        // MOCK DATA: Chennai Companies
+        const chennaiJobs = [
+            { id: 1, company: "Zoho Corporation", role: "Product Developer", location: "Estancia IT Park", logo: "Z" },
+            { id: 2, company: "Freshworks Inc", role: "Software Engineer", location: "OMR, Chennai", logo: "F" },
+            { id: 3, company: "HCLTech", role: "System Architect", location: "Siruseri IT Park", logo: "H" },
+            { id: 4, company: "Standard Chartered", role: "FinTech Developer", location: "DLF Cybercity", logo: "S" },
+            { id: 5, company: "TCS", role: "Full Stack Lead", location: "Sholinganallur", logo: "T" },
+            { id: 6, company: "Ford Smart Mobility", role: "Data Engineer", location: "Global Tech Park", logo: "F" }
+        ];
+
+        let appliedJobs = [];
+        let currentSelectedJob = null;
+
+        // AUTH LOGIC
+        function toggleAuth(isRegister) {
+            document.getElementById('login-form').classList.toggle('hidden', isRegister);
+            document.getElementById('register-form').classList.toggle('hidden', !isRegister);
+        }
+
+        document.getElementById('login-form').onsubmit = (e) => {
+            e.preventDefault();
+            document.getElementById('auth-page').classList.add('hidden');
+            document.getElementById('dashboard-page').classList.remove('hidden');
+            renderJobs();
+        };
+
+        document.getElementById('register-form').onsubmit = (e) => {
+            e.preventDefault();
+            alert("Account Created! You can now login.");
+            toggleAuth(false);
+        };
+
+        // RENDER JOBS
+        function renderJobs() {
+            const grid = document.getElementById('job-grid');
+            grid.innerHTML = chennaiJobs.map(job => `
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex gap-4">
+                            <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center font-black text-indigo-600 text-xl">${job.logo}</div>
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-900">${job.role}</h3>
+                                <p class="text-sm text-slate-500 font-medium">${job.company}</p>
+                            </div>
+                        </div>
+                        <span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase">Chennai</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-400 text-xs mb-6">
+                        <i class="fas fa-map-marker-alt"></i> ${job.location}
+                    </div>
+                    <button onclick="openApplyModal(${job.id})" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-indigo-600 transition">APPLY NOW</button>
+                </div>
+            `).join('');
+        }
+
+        // MODAL LOGIC
+        function openApplyModal(jobId) {
+            currentSelectedJob = chennaiJobs.find(j => j.id === jobId);
+            document.getElementById('target-job-info').innerText = `${currentSelectedJob.role} at ${currentSelectedJob.company}`;
+            document.getElementById('apply-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('apply-modal').classList.add('hidden');
+        }
+
+        // APPLICATION SUBMIT
+        document.getElementById('application-form').onsubmit = (e) => {
+            e.preventDefault();
+            appliedJobs.push(currentSelectedJob);
+            document.getElementById('apply-modal').classList.add('hidden');
+            document.getElementById('thank-company').innerText = currentSelectedJob.company;
+            document.getElementById('thank-you').classList.remove('hidden');
+        };
+
+        function goToDashboard() {
+            document.getElementById('thank-you').classList.add('hidden');
+            showTab('applied');
+        }
+
+        // TAB SWITCHING
+        function showTab(tab) {
+            document.getElementById('browse-tab').classList.toggle('hidden', tab !== 'browse');
+            document.getElementById('applied-tab').classList.toggle('hidden', tab !== 'applied');
+            
+            document.getElementById('tab-browse').classList.toggle('tab-active', tab === 'browse');
+            document.getElementById('tab-applied').classList.toggle('tab-active', tab === 'applied');
+
+            if(tab === 'applied') renderAppliedJobs();
+        }
+
+        function renderAppliedJobs() {
+            const list = document.getElementById('applied-list');
+            if(appliedJobs.length === 0) {
+                list.innerHTML = `<div class="text-center py-20 text-slate-400 font-medium">No applications yet. Start exploring jobs!</div>`;
+                return;
+            }
+            list.innerHTML = appliedJobs.map(job => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 flex justify-between items-center">
+                    <div class="flex gap-4 items-center">
+                        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center font-bold">${job.logo}</div>
+                        <div>
+                            <h4 class="font-bold text-slate-900">${job.role}</h4>
+                            <p class="text-xs text-slate-400">${job.company} • ${job.location}</p>
+                        </div>
+                    </div>
+                    <span class="status-badge bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full uppercase">Under Review</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
