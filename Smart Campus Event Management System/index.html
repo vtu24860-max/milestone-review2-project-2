@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusHub — Smart Event Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d45;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --accent3: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text: #f1f5f9;
+    --text-muted: #64748b;
+    --text-soft: #94a3b8;
+    --glow: 0 0 30px rgba(59,130,246,0.2);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── NOISE TEXTURE OVERLAY ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ─── TYPOGRAPHY ─── */
+  h1, h2, h3, h4, h5 { font-family: 'Syne', sans-serif; }
+
+  /* ─── GLOW ORBS ─── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+    animation: orb-drift 20s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 600px; height: 600px; background: var(--accent); top: -200px; left: -200px; }
+  .orb-2 { width: 400px; height: 400px; background: var(--accent3); bottom: -100px; right: -100px; animation-delay: -10s; }
+  .orb-3 { width: 300px; height: 300px; background: var(--accent2); top: 50%; left: 50%; animation-delay: -5s; opacity: 0.07; }
+  @keyframes orb-drift { from { transform: translate(0,0) scale(1); } to { transform: translate(60px,40px) scale(1.1); } }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,15,30,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.35rem;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .nav-brand-icon {
+    width: 34px;
+    height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .nav-tab:hover { color: var(--text); background: var(--surface2); }
+  .nav-tab.active { background: var(--accent); color: #fff; }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .badge-role {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge-student { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-admin { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+  .btn-switch {
+    padding: 7px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-switch:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── LAYOUT ─── */
+  .container { max-width: 1400px; margin: 0 auto; padding: 2rem; position: relative; z-index: 1; }
+
+  /* ─── PAGE SECTIONS ─── */
+  .page { display: none; animation: fadeIn 0.4s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── HERO ─── */
+  .hero {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 0.82rem;
+    color: var(--accent2);
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.03em;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent2) 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 1.1rem;
+    color: var(--text-soft);
+    max-width: 500px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ─── BUTTONS ─── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(59,130,246,0.35); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.25); }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-success { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.25); }
+  .btn-success:hover { background: rgba(16,185,129,0.2); }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+  .btn-icon { padding: 8px; width: 36px; height: 36px; justify-content: center; }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--stat-color, var(--accent));
+  }
+  .stat-card:hover { border-color: var(--stat-color, var(--accent)); }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: var(--text); }
+  .stat-sub { font-size: 0.8rem; color: var(--text-muted); }
+  .stat-icon { position: absolute; right: 1.25rem; top: 1.25rem; font-size: 1.5rem; opacity: 0.3; }
+
+  /* ─── SEARCH / FILTERS ─── */
+  .filters-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+  .filter-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; }
+  .filter-input, .filter-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 0.88rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-input:focus, .filter-select:focus { border-color: var(--accent); }
+  .filter-select option { background: var(--surface2); }
+
+  /* ─── EVENTS GRID ─── */
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .event-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+  .event-card-header {
+    padding: 1.25rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .event-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .type-workshop { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.25); }
+  .type-seminar { background: rgba(59,130,246,0.15); color: var(--accent); border: 1px solid rgba(59,130,246,0.25); }
+  .type-cultural { background: rgba(236,72,153,0.15); color: #f472b6; border: 1px solid rgba(236,72,153,0.25); }
+  .type-technical { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.25); }
+  .type-sports { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.25); }
+  .event-card-body { padding: 1.25rem; flex: 1; }
+  .event-title { font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3; }
+  .event-meta { display: flex; flex-direction: column; gap: 5px; margin-top: 0.75rem; }
+  .event-meta-item { display: flex; align-items: center; gap: 8px; font-size: 0.83rem; color: var(--text-soft); }
+  .meta-icon { font-size: 0.9rem; width: 16px; text-align: center; }
+  .event-desc { font-size: 0.87rem; color: var(--text-muted); line-height: 1.6; margin-top: 0.75rem; }
+  .event-card-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .seats-bar { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .seats-text { font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+  .progress-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s; }
+  .progress-fill.danger { background: linear-gradient(90deg, var(--warning), var(--danger)); }
+  .registered-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--success);
+    color: #fff;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── TABLE ─── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .table-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface2); }
+  th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 13px 16px;
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-actions { display: flex; gap: 6px; align-items: center; }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modal-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes modal-in { from { opacity: 0; transform: scale(0.92) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; }
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .modal-close:hover { color: var(--text); border-color: var(--accent); }
+  .modal-body { padding: 1.5rem; }
+  .modal-footer {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  /* ─── FORM ─── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 0.82rem; color: var(--text-soft); font-weight: 500; }
+  .form-input, .form-select, .form-textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+  }
+  .form-input.error { border-color: var(--danger); }
+  .form-select option { background: var(--surface2); }
+  .form-textarea { resize: vertical; min-height: 90px; }
+  .form-error { font-size: 0.78rem; color: var(--danger); display: none; }
+  .form-error.show { display: block; }
+  .form-hint { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+  .section-sub { font-size: 0.88rem; color: var(--text-muted); margin-top: 3px; }
+
+  /* ─── TOAST ─── */
+  .toast-container {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9000;
+  }
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-width: 260px;
+    max-width: 360px;
+    animation: toast-in 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+  .toast-icon { font-size: 1.1rem; }
+  .toast-msg { font-size: 0.88rem; flex: 1; line-height: 1.4; }
+  .toast-success { border-left: 3px solid var(--success); }
+  .toast-error { border-left: 3px solid var(--danger); }
+  .toast-info { border-left: 3px solid var(--accent); }
+
+  /* ─── EMPTY STATE ─── */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+  .empty-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-soft); margin-bottom: 0.5rem; }
+
+  /* ─── ADMIN TABS ─── */
+  .admin-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2rem;
+  }
+  .admin-tab {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .admin-tab:hover { color: var(--text); }
+  .admin-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; }
+
+  /* ─── REGISTRATION CARD ─── */
+  .reg-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: border-color 0.2s;
+  }
+  .reg-card:hover { border-color: var(--accent); }
+  .reg-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .reg-info { flex: 1; }
+  .reg-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 3px; }
+  .reg-meta { font-size: 0.82rem; color: var(--text-muted); }
+  .reg-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .status-confirmed { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+  .status-pending { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+  .status-cancelled { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+
+  /* ─── CHART ─── */
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.5rem; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .chart-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; margin-bottom: 1.25rem; color: var(--text-soft); }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-size: 0.8rem; color: var(--text-muted); width: 80px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.34,1.56,0.64,1); }
+  .bar-val { font-size: 0.8rem; color: var(--text-soft); width: 28px; flex-shrink: 0; font-weight: 600; }
+  .donut-wrap { display: flex; align-items: center; gap: 1.5rem; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ─── TECH HIGHLIGHT ─── */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .tech-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: all 0.2s;
+  }
+  .tech-card:hover { border-color: var(--accent); }
+  .tech-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .tech-name { font-family: 'Syne', sans-serif; font-size: 0.88rem; font-weight: 700; margin-bottom: 3px; }
+  .tech-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+  .code-tag {
+    display: inline-block;
+    background: rgba(59,130,246,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(6,182,212,0.2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.72rem;
+    font-family: monospace;
+    margin-top: 4px;
+  }
+
+  /* ─── AUTH ─── */
+  .auth-wrap {
+    max-width: 400px;
+    margin: 3rem auto;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+  }
+  .auth-title { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; }
+  .auth-sub { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.75rem; }
+  .auth-divider { display: flex; align-items: center; gap: 12px; margin: 1.25rem 0; font-size: 0.8rem; color: var(--text-muted); }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ─── FEEDBACK ─── */
+  .feedback-stars { display: flex; gap: 6px; margin-bottom: 0.5rem; }
+  .star {
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: transform 0.15s;
+    color: var(--border);
+  }
+  .star.lit { color: var(--warning); }
+  .star:hover { transform: scale(1.2); }
+
+  @media (max-width: 768px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .chart-row { grid-template-columns: 1fr; }
+    .nav-tabs { display: none; }
+    .events-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Ambient orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ═══════════════════════════════════════════════════════ NAV ═══ -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#" onclick="return false">
+      <div class="nav-brand-icon">🎓</div>
+      CampusHub
+    </a>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('browse')">Browse Events</button>
+      <button class="nav-tab" onclick="showPage('myevents')">My Registrations</button>
+      <button class="nav-tab" onclick="showPage('admin')">Admin Panel</button>
+      <button class="nav-tab" onclick="showPage('tech')">Tech Stack</button>
+    </div>
+    <div class="nav-right">
+      <span class="badge-role badge-student" id="roleLabel">Student</span>
+      <button class="btn-switch" onclick="switchRole()">⇄ Switch Role</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ BROWSE PAGE ═══ -->
+<div class="container">
+
+  <div id="page-browse" class="page active">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-eyebrow">🌐 Live Campus Events Platform</div>
+      <h1>Discover & Register for Campus Events</h1>
+      <p>Workshops, seminars, cultural fests, and more — all in one place. Built with Spring Boot + JPA.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="openModal('register-modal')">➕ Quick Register</button>
+        <button class="btn btn-secondary" onclick="showPage('admin')">⚙️ Admin Dashboard</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card" style="--stat-color:#3b82f6">
+        <div class="stat-icon">📅</div>
+        <div class="stat-label">Upcoming Events</div>
+        <div class="stat-value" id="stat-events">12</div>
+        <div class="stat-sub">This semester</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#10b981">
+        <div class="stat-icon">🎟️</div>
+        <div class="stat-label">Registrations</div>
+        <div class="stat-value" id="stat-regs">347</div>
+        <div class="stat-sub">Total enrolled</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#f59e0b">
+        <div class="stat-icon">🏛️</div>
+        <div class="stat-label">Departments</div>
+        <div class="stat-value">8</div>
+        <div class="stat-sub">Participating</div>
+      </div>
+      <div class="stat-card" style="--stat-color:#8b5cf6">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-label">Avg Feedback</div>
+        <div class="stat-value">4.6</div>
+        <div class="stat-sub">/ 5.0 rating</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <div class="filter-label">🔍 Search</div>
+        <input class="filter-input" type="text" placeholder="Event name or keyword…" id="searchInput" oninput="filterEvents()">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">📁 Type</div>
+        <select class="filter-select" id="typeFilter" onchange="filterEvents()">
+          <option value="">All Types</option>
+          <option>Workshop</option>
+          <option>Seminar</option>
+          <option>Cultural</option>
+          <option>Technical</option>
+          <option>Sports</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">🏛️ Department</div>
+        <select class="filter-select" id="deptFilter" onchange="filterEvents()">
+          <option value="">All Departments</option>
+          <option>CSE</option>
+          <option>ECE</option>
+          <option>MBA</option>
+          <option>Mechanical</option>
+          <option>Civil</option>
+          <option>General</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">📆 Date From</div>
+        <input class="filter-input" type="date" id="dateFilter" onchange="filterEvents()">
+      </div>
+      <div class="filter-group" style="justify-content:flex-end; flex-direction:row; align-items:flex-end; flex:0">
+        <button class="btn btn-secondary" onclick="clearFilters()">✕ Clear</button>
+      </div>
+    </div>
+
+    <!-- Events grid -->
+    <div class="section-header">
+      <div>
+        <div class="section-title">Upcoming Events</div>
+        <div class="section-sub" id="eventCount">Showing 12 events</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" onclick="sortEvents('date')">Sort by Date</button>
+        <button class="btn btn-secondary btn-sm" onclick="sortEvents('name')">Sort by Name</button>
+      </div>
+    </div>
+    <div class="events-grid" id="eventsGrid"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ MY EVENTS PAGE ═══ -->
+  <div id="page-myevents" class="page">
+    <div class="section-header">
+      <div>
+        <div class="section-title">My Registrations</div>
+        <div class="section-sub">Track your enrolled events</div>
+      </div>
+      <button class="btn btn-primary" onclick="showPage('browse')">+ Browse Events</button>
+    </div>
+
+    <div id="myRegistrations" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div id="noRegs" class="empty-state" style="display:none">
+      <div class="empty-icon">🎪</div>
+      <div class="empty-title">No registrations yet</div>
+      <p>Browse and register for exciting campus events!</p>
+      <br>
+      <button class="btn btn-primary" onclick="showPage('browse')">Explore Events</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ ADMIN PAGE ═══ -->
+  <div id="page-admin" class="page">
+    <div id="adminLogin" style="display:none">
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <div style="font-size:2rem;margin-bottom:1rem">🔐</div>
+          <div class="auth-title">Admin Login</div>
+          <div class="auth-sub">Spring Security Basic Auth — default: admin / admin123</div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">Username</label>
+            <input class="form-input" type="text" id="loginUser" placeholder="admin" value="admin">
+          </div>
+          <div class="form-group" style="margin-bottom:1.5rem">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" id="loginPass" placeholder="admin123" value="admin123">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Login to Dashboard →</button>
+          <div class="auth-divider">or</div>
+          <button class="btn btn-secondary" style="width:100%" onclick="switchRole()">Continue as Student</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminDash">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Admin Dashboard</div>
+          <div class="section-sub">Spring Boot + JPA | Global Exception Handler active</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="openModal('add-event-modal')">➕ Add Event</button>
+          <button class="btn btn-secondary" onclick="doLogout()">⎋ Logout</button>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="stats-row" style="margin-bottom:1.5rem">
+        <div class="stat-card" style="--stat-color:#3b82f6">
+          <div class="stat-icon">📋</div>
+          <div class="stat-label">Total Events</div>
+          <div class="stat-value" id="admin-stat-events">12</div>
+        </div>
+        <div class="stat-card" style="--stat-color:#10b981">
+          <div class="stat-icon">👥</div>
+          <div class="stat-label">Total Registrations</div>
+          <div class="stat-value" id="admin-stat-regs">347</div>
+        </div>
+        <div class="stat-card" style="--stat-color:#f59e0b">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-label">Most Popular</div>
+          <div class="stat-value" style="font-size:1rem;padding-top:4px" id="admin-stat-popular">AI Summit</div>
+        </div>
+        <div class="stat-card" style="--stat-color:#ef4444">
+          <div class="stat-icon">🔴</div>
+          <div class="stat-label">Full / Closed</div>
+          <div class="stat-value" id="admin-stat-full">2</div>
+        </div>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('events')">📋 Events CRUD</button>
+        <button class="admin-tab" onclick="switchAdminTab('registrations')">👥 Registrations</button>
+        <button class="admin-tab" onclick="switchAdminTab('analytics')">📊 Analytics</button>
+      </div>
+
+      <!-- Events CRUD -->
+      <div class="admin-panel active" id="panel-events">
+        <div class="filters-bar" style="margin-bottom:1.25rem">
+          <div class="filter-group">
+            <div class="filter-label">🔍 Search Events</div>
+            <input class="filter-input" type="text" placeholder="Search…" id="adminSearch" oninput="renderAdminTable()">
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">📁 Type</div>
+            <select class="filter-select" id="adminTypeFilter" onchange="renderAdminTable()">
+              <option value="">All</option>
+              <option>Workshop</option><option>Seminar</option><option>Cultural</option><option>Technical</option><option>Sports</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">🏛️ Department</div>
+            <select class="filter-select" id="adminDeptFilter" onchange="renderAdminTable()">
+              <option value="">All</option>
+              <option>CSE</option><option>ECE</option><option>MBA</option><option>Mechanical</option><option>Civil</option><option>General</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <div class="table-title">All Events</div>
+            <span id="adminEventCount" style="font-size:0.83rem;color:var(--text-muted)"></span>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Event Name</th><th>Type</th><th>Department</th><th>Date</th><th>Venue</th><th>Seats</th><th>Registered</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registrations panel -->
+      <div class="admin-panel" id="panel-registrations">
+        <div class="table-wrap">
+          <div class="table-header">
+            <div class="table-title">All Student Registrations</div>
+            <span style="font-size:0.83rem;color:var(--text-muted)">Aggregate from JPA @Query</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Student Name</th><th>Roll No</th><th>Event</th><th>Department</th><th>Registered On</th><th>Status</th></tr>
+              </thead>
+              <tbody id="regTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics panel -->
+      <div class="admin-panel" id="panel-analytics">
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-title">Registrations by Event Type</div>
+            <div class="bar-chart" id="typeChart"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Department Participation</div>
+            <div class="bar-chart" id="deptChart"></div>
+          </div>
+        </div>
+        <div class="chart-row" style="margin-top:1.25rem">
+          <div class="chart-card">
+            <div class="chart-title">Seat Utilization per Event</div>
+            <div class="bar-chart" id="seatChart"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Monthly Registration Trend</div>
+            <div class="bar-chart" id="monthChart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════════════════════════════════════════ TECH STACK ═══ -->
+  <div id="page-tech" class="page">
+    <div class="hero" style="padding:3rem 2rem 2rem">
+      <div class="hero-eyebrow">⚙️ Spring Ecosystem</div>
+      <h1 style="font-size:clamp(2rem,4vw,3rem)">Technical Architecture</h1>
+      <p>Full-stack annotation-driven Spring Boot application with Thymeleaf, JPA, and REST APIs.</p>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Core Technologies</div>
+    </div>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(59,130,246,0.15)">🌱</div>
+        <div>
+          <div class="tech-name">Spring Core</div>
+          <div class="tech-desc">Dependency injection and bean lifecycle management</div>
+          <div><span class="code-tag">@Autowired</span> <span class="code-tag">@Component</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(16,185,129,0.15)">🌐</div>
+        <div>
+          <div class="tech-name">Spring MVC</div>
+          <div class="tech-desc">Annotation-based controllers and request mappings</div>
+          <div><span class="code-tag">@Controller</span> <span class="code-tag">@RequestMapping</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(245,158,11,0.15)">🚀</div>
+        <div>
+          <div class="tech-name">Spring Boot</div>
+          <div class="tech-desc">Embedded Tomcat, auto-configuration, REST APIs</div>
+          <div><span class="code-tag">@SpringBootApp</span> <span class="code-tag">@RestController</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(139,92,246,0.15)">🗄️</div>
+        <div>
+          <div class="tech-name">Spring Data JPA</div>
+          <div class="tech-desc">ORM entity mapping, CRUD repositories, JPQL queries</div>
+          <div><span class="code-tag">@Entity</span> <span class="code-tag">@Repository</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(239,68,68,0.15)">🔐</div>
+        <div>
+          <div class="tech-name">Spring Security</div>
+          <div class="tech-desc">Basic HTTP authentication for admin routes</div>
+          <div><span class="code-tag">@EnableWebSecurity</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(6,182,212,0.15)">✅</div>
+        <div>
+          <div class="tech-name">Bean Validation</div>
+          <div class="tech-desc">Form validation with JSR-380 annotations</div>
+          <div><span class="code-tag">@NotNull</span> <span class="code-tag">@Size</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(236,72,153,0.15)">⚠️</div>
+        <div>
+          <div class="tech-name">Exception Handling</div>
+          <div class="tech-desc">Global error handling with advice and custom responses</div>
+          <div><span class="code-tag">@ControllerAdvice</span> <span class="code-tag">@ExceptionHandler</span></div>
+        </div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-icon" style="background:rgba(34,197,94,0.15)">🍃</div>
+        <div>
+          <div class="tech-name">Thymeleaf</div>
+          <div class="tech-desc">Server-side HTML5/CSS3 template engine</div>
+          <div><span class="code-tag">th:each</span> <span class="code-tag">th:text</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-header" style="margin-top:2.5rem">
+      <div class="section-title">REST API Endpoints</div>
+    </div>
+    <div class="table-wrap">
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Endpoint</th><th>Description</th><th>Auth</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span style="color:#10b981;font-family:monospace;font-weight:700">GET</span></td><td><code style="color:var(--accent2)">/api/events</code></td><td>List all events with filters</td><td>Public</td></tr>
+            <tr><td><span style="color:#10b981;font-family:monospace;font-weight:700">GET</span></td><td><code style="color:var(--accent2)">/api/events/{id}</code></td><td>Get event by ID</td><td>Public</td></tr>
+            <tr><td><span style="color:#3b82f6;font-family:monospace;font-weight:700">POST</span></td><td><code style="color:var(--accent2)">/api/events</code></td><td>Create new event</td><td>Admin</td></tr>
+            <tr><td><span style="color:#f59e0b;font-family:monospace;font-weight:700">PUT</span></td><td><code style="color:var(--accent2)">/api/events/{id}</code></td><td>Update existing event</td><td>Admin</td></tr>
+            <tr><td><span style="color:#ef4444;font-family:monospace;font-weight:700">DELETE</span></td><td><code style="color:var(--accent2)">/api/events/{id}</code></td><td>Delete event</td><td>Admin</td></tr>
+            <tr><td><span style="color:#3b82f6;font-family:monospace;font-weight:700">POST</span></td><td><code style="color:var(--accent2)">/api/register</code></td><td>Register for event</td><td>Student</td></tr>
+            <tr><td><span style="color:#10b981;font-family:monospace;font-weight:700">GET</span></td><td><code style="color:var(--accent2)">/api/registrations/{studentId}</code></td><td>Get student registrations</td><td>Student</td></tr>
+            <tr><td><span style="color:#10b981;font-family:monospace;font-weight:700">GET</span></td><td><code style="color:var(--accent2)">/api/admin/stats</code></td><td>Event registration statistics</td><td>Admin</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════ MODALS ═══ -->
+
+<!-- Register for event modal -->
+<div class="modal-overlay" id="register-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Register for Event</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-top:3px" id="regEventName">Select an event below</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('register-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Full Name <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="reg-name" type="text" placeholder="e.g. Priya Sharma">
+          <span class="form-error" id="err-reg-name">Name is required (min 3 chars)</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Roll Number <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="reg-roll" type="text" placeholder="e.g. 21CS1045">
+          <span class="form-error" id="err-reg-roll">Valid roll number required</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="reg-email" type="email" placeholder="you@college.edu">
+          <span class="form-error" id="err-reg-email">Valid email required</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="reg-phone" type="tel" placeholder="10-digit number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department <span style="color:var(--danger)">*</span></label>
+          <select class="form-select" id="reg-dept">
+            <option value="">Select Department</option>
+            <option>CSE</option><option>ECE</option><option>MBA</option><option>Mechanical</option><option>Civil</option>
+          </select>
+          <span class="form-error" id="err-reg-dept">Please select a department</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Year</label>
+          <select class="form-select" id="reg-year">
+            <option value="">Select Year</option>
+            <option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Event <span style="color:var(--danger)">*</span></label>
+          <select class="form-select" id="reg-event">
+            <option value="">Select Event</option>
+          </select>
+          <span class="form-error" id="err-reg-event">Please select an event</span>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Special Requirements</label>
+          <textarea class="form-textarea" id="reg-notes" placeholder="Dietary needs, accessibility, etc."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('register-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitRegistration()">Confirm Registration →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Event Modal -->
+<div class="modal-overlay" id="add-event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="eventFormTitle">Add New Event</div>
+        <div style="font-size:0.82rem;color:var(--text-muted);margin-top:3px">@Valid + @NotNull applied on submission</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('add-event-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editEventId" value="">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Event Name <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="ev-name" type="text" placeholder="e.g. AI & ML Summit 2025">
+          <span class="form-error" id="err-ev-name">Event name required (min 5 chars)</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type <span style="color:var(--danger)">*</span></label>
+          <select class="form-select" id="ev-type">
+            <option value="">Select Type</option>
+            <option>Workshop</option><option>Seminar</option><option>Cultural</option><option>Technical</option><option>Sports</option>
+          </select>
+          <span class="form-error" id="err-ev-type">Type is required</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department <span style="color:var(--danger)">*</span></label>
+          <select class="form-select" id="ev-dept">
+            <option value="">Select Dept</option>
+            <option>CSE</option><option>ECE</option><option>MBA</option><option>Mechanical</option><option>Civil</option><option>General</option>
+          </select>
+          <span class="form-error" id="err-ev-dept">Department required</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="ev-date" type="date">
+          <span class="form-error" id="err-ev-date">Date required</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <input class="form-input" id="ev-time" type="time" value="10:00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Venue <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="ev-venue" type="text" placeholder="e.g. Seminar Hall A">
+          <span class="form-error" id="err-ev-venue">Venue required</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Seats <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" id="ev-seats" type="number" placeholder="e.g. 100" min="1">
+          <span class="form-error" id="err-ev-seats">Seats must be > 0</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Speaker / Organizer</label>
+          <input class="form-input" id="ev-speaker" type="text" placeholder="e.g. Dr. Rajan Kumar">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Description <span style="color:var(--danger)">*</span></label>
+          <textarea class="form-textarea" id="ev-desc" placeholder="Brief description of the event…"></textarea>
+          <span class="form-error" id="err-ev-desc">Description required (min 20 chars)</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-event-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">💾 Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Event Detail Modal -->
+<div class="modal-overlay" id="view-event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="viewTitle">Event Details</div>
+      <button class="modal-close" onclick="closeModal('view-event-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="viewBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('view-event-modal')">Close</button>
+      <button class="btn btn-primary" onclick="registerFromView()">Register Now →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feedback Modal -->
+<div class="modal-overlay" id="feedback-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Leave Feedback</div>
+      <button class="modal-close" onclick="closeModal('feedback-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:1.25rem">
+        <label class="form-label">Your Rating</label>
+        <div class="feedback-stars" id="starRow">
+          <span class="star" onclick="setStars(1)">★</span>
+          <span class="star" onclick="setStars(2)">★</span>
+          <span class="star" onclick="setStars(3)">★</span>
+          <span class="star" onclick="setStars(4)">★</span>
+          <span class="star" onclick="setStars(5)">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comments</label>
+        <textarea class="form-textarea" id="fb-text" placeholder="Share your experience…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('feedback-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitFeedback()">Submit Feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">Confirm Delete</div>
+      <button class="modal-close" onclick="closeModal('delete-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-soft);line-height:1.7">Are you sure you want to delete <strong id="deleteEventName"></strong>? This action cannot be undone. All registrations for this event will also be removed.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">🗑️ Delete Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══════════════════════════════════════════ SCRIPT ═══ -->
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────
+let events = [
+  { id: 1, name: "AI & ML Summit 2025", type: "Technical", dept: "CSE", date: "2025-05-10", time: "10:00", venue: "Main Auditorium", seats: 200, registered: 187, speaker: "Dr. Rajesh Kumar", desc: "Explore cutting-edge AI/ML technologies with industry experts. Hands-on demos, research presentations, and networking." },
+  { id: 2, name: "Full Stack Dev Workshop", type: "Workshop", dept: "CSE", date: "2025-05-15", time: "09:00", venue: "Lab 201", seats: 60, registered: 58, speaker: "Prof. Anita Sharma", desc: "Deep dive into React, Spring Boot, and cloud deployment. Bring your laptops for hands-on coding sessions." },
+  { id: 3, name: "Entrepreneurship Conclave", type: "Seminar", dept: "MBA", date: "2025-05-18", time: "11:00", venue: "Seminar Hall B", seats: 120, registered: 45, speaker: "Mr. Vikram Nair", desc: "Learn startup strategies, pitch techniques, and funding insights from successful entrepreneurs." },
+  { id: 4, name: "Cultural Fest — Tarang", type: "Cultural", dept: "General", date: "2025-05-22", time: "14:00", venue: "Open Air Theatre", seats: 500, registered: 312, speaker: "Student Council", desc: "Annual cultural extravaganza with music, dance, drama, and art competitions. Open for all students." },
+  { id: 5, name: "Embedded Systems Workshop", type: "Workshop", dept: "ECE", date: "2025-05-25", time: "09:30", venue: "ECE Lab 3", seats: 40, registered: 38, speaker: "Dr. Pradeep Menon", desc: "Hands-on Arduino and Raspberry Pi programming. IoT project demonstrations and competitions." },
+  { id: 6, name: "CAD Design Masterclass", type: "Workshop", dept: "Mechanical", date: "2025-05-28", time: "10:00", venue: "Design Studio", seats: 35, registered: 22, speaker: "Er. Suresh Babu", desc: "SolidWorks and AutoCAD advanced techniques for product design and manufacturing simulations." },
+  { id: 7, name: "National Sports Day", type: "Sports", dept: "General", date: "2025-06-02", time: "08:00", venue: "Sports Complex", seats: 300, registered: 156, speaker: "Sports Department", desc: "Inter-department cricket, football, badminton, and athletics competitions. Prizes for winners." },
+  { id: 8, name: "Blockchain & Web3 Talk", type: "Seminar", dept: "CSE", date: "2025-06-05", time: "15:00", venue: "Seminar Hall A", seats: 100, registered: 67, speaker: "Ms. Divya Krishnan", desc: "Overview of decentralized technologies, smart contracts, and real-world blockchain applications." },
+  { id: 9, name: "Green Architecture Symposium", type: "Seminar", dept: "Civil", date: "2025-06-08", time: "10:30", venue: "Civil Block Hall", seats: 80, registered: 34, speaker: "Arch. Ramesh Pillai", desc: "Sustainable design principles, green building materials, and LEED certification processes." },
+  { id: 10, name: "Data Science Bootcamp", type: "Workshop", dept: "CSE", date: "2025-06-12", time: "09:00", venue: "Computer Lab 1", seats: 50, registered: 49, speaker: "Dr. Neha Verma", desc: "Python, Pandas, and visualization tools. End-to-end data science project from data collection to deployment." },
+  { id: 11, name: "Marketing Analytics Summit", type: "Seminar", dept: "MBA", date: "2025-06-15", time: "11:00", venue: "Conference Room", seats: 70, registered: 28, speaker: "Prof. Kavitha Iyer", desc: "Digital marketing metrics, customer behavior analytics, and campaign optimization strategies." },
+  { id: 12, name: "Robotics Competition", type: "Technical", dept: "ECE", date: "2025-06-20", time: "09:00", venue: "Innovation Hub", seats: 80, registered: 72, speaker: "Robotics Club", desc: "Build and battle! Teams design autonomous robots to compete in obstacle courses and combat challenges." }
+];
+
+let registrations = [
+  { id: 1, studentName: "Priya Sharma", roll: "21CS1045", eventId: 1, dept: "CSE", date: "2025-04-28", status: "confirmed" },
+  { id: 2, studentName: "Arjun Nair", roll: "21ECE023", eventId: 5, dept: "ECE", date: "2025-04-29", status: "confirmed" },
+  { id: 3, studentName: "Sneha Rao", roll: "22MBA011", eventId: 3, dept: "MBA", date: "2025-04-30", status: "pending" },
+  { id: 4, studentName: "Vikram Singh", roll: "21ME056", eventId: 6, dept: "Mechanical", date: "2025-05-01", status: "confirmed" },
+  { id: 5, studentName: "Divya Krishnan", roll: "21CS2034", eventId: 10, dept: "CSE", date: "2025-05-02", status: "confirmed" },
+  { id: 6, studentName: "Rohan Patel", roll: "22CE015", eventId: 9, dept: "Civil", date: "2025-05-03", status: "pending" },
+];
+
+let isAdmin = false;
+let myRegisteredEventIds = [1, 5, 10];
+let currentStars = 0;
+let deleteTargetId = null;
+let viewingEventId = null;
+let nextId = 13;
+
+// ─── TYPE ICONS & COLORS ─────────────────────────────────────────
+const typeConfig = {
+  Workshop: { icon: "🔧", color: "#f59e0b", bg: "rgba(245,158,11,0.15)", cls: "type-workshop" },
+  Seminar: { icon: "🎤", color: "#3b82f6", bg: "rgba(59,130,246,0.15)", cls: "type-seminar" },
+  Cultural: { icon: "🎨", color: "#f472b6", bg: "rgba(236,72,153,0.15)", cls: "type-cultural" },
+  Technical: { icon: "⚙️", color: "#10b981", bg: "rgba(16,185,129,0.15)", cls: "type-technical" },
+  Sports: { icon: "🏆", color: "#a78bfa", bg: "rgba(139,92,246,0.15)", cls: "type-sports" }
+};
+
+// ─── NAV ──────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['browse','myevents','admin','tech'][i] === name);
+  });
+  if (name === 'browse') { renderEvents(); updateStats(); }
+  if (name === 'myevents') renderMyEvents();
+  if (name === 'admin') {
+    if (!isAdmin) showAdminLogin();
+    else { showAdminDash(); renderAdminTable(); renderRegTable(); renderCharts(); }
+  }
+}
+
+// ─── ROLE ────────────────────────────────────────────────────────
+function switchRole() {
+  isAdmin = !isAdmin;
+  document.getElementById('roleLabel').textContent = isAdmin ? 'Admin' : 'Student';
+  document.getElementById('roleLabel').className = 'badge-role ' + (isAdmin ? 'badge-admin' : 'badge-student');
+  if (isAdmin) { showPage('admin'); }
+  else { showPage('browse'); }
+}
+
+// ─── ADMIN LOGIN ─────────────────────────────────────────────────
+function showAdminLogin() {
+  document.getElementById('adminLogin').style.display = 'block';
+  document.getElementById('adminDash').style.display = 'none';
+}
+function showAdminDash() {
+  document.getElementById('adminLogin').style.display = 'none';
+  document.getElementById('adminDash').style.display = 'block';
+}
+function doLogin() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if (u === 'admin' && p === 'admin123') {
+    isAdmin = true;
+    document.getElementById('roleLabel').textContent = 'Admin';
+    document.getElementById('roleLabel').className = 'badge-role badge-admin';
+    showAdminDash();
+    renderAdminTable();
+    renderRegTable();
+    renderCharts();
+    toast('Login successful! Welcome, Admin.', 'success');
+  } else {
+    toast('Invalid credentials. Try admin / admin123', 'error');
+  }
+}
+function doLogout() {
+  isAdmin = false;
+  document.getElementById('roleLabel').textContent = 'Student';
+  document.getElementById('roleLabel').className = 'badge-role badge-student';
+  showPage('browse');
+  toast('Logged out successfully.', 'info');
+}
+
+// ─── ADMIN TABS ───────────────────────────────────────────────────
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['events','registrations','analytics'][i] === tab);
+  });
+  document.querySelectorAll('.admin-panel').forEach((p, i) => {
+    p.classList.toggle('active', ['panel-events','panel-registrations','panel-analytics'][i] === 'panel-' + tab);
+  });
+}
+
+// ─── STATS ───────────────────────────────────────────────────────
+function updateStats() {
+  const totalRegs = registrations.length + myRegisteredEventIds.length;
+  document.getElementById('stat-events').textContent = events.length;
+  document.getElementById('stat-regs').textContent = totalRegs;
+  const full = events.filter(e => e.registered >= e.seats).length;
+  const popular = events.slice().sort((a,b) => b.registered - a.registered)[0];
+  if (document.getElementById('admin-stat-events')) {
+    document.getElementById('admin-stat-events').textContent = events.length;
+    document.getElementById('admin-stat-regs').textContent = events.reduce((s,e) => s + e.registered, 0);
+    document.getElementById('admin-stat-popular').textContent = popular ? popular.name.split(' ').slice(0,2).join(' ') : '—';
+    document.getElementById('admin-stat-full').textContent = full;
+  }
+}
+
+// ─── RENDER EVENTS ────────────────────────────────────────────────
+function getFilteredEvents() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const type = document.getElementById('typeFilter')?.value || '';
+  const dept = document.getElementById('deptFilter')?.value || '';
+  const date = document.getElementById('dateFilter')?.value || '';
+  return events.filter(e => {
+    if (q && !e.name.toLowerCase().includes(q) && !e.dept.toLowerCase().includes(q)) return false;
+    if (type && e.type !== type) return false;
+    if (dept && e.dept !== dept) return false;
+    if (date && e.date < date) return false;
+    return true;
+  });
+}
+
+function renderEvents() {
+  const grid = document.getElementById('eventsGrid');
+  const filtered = getFilteredEvents();
+  document.getElementById('eventCount').textContent = `Showing ${filtered.length} event${filtered.length !== 1 ? 's' : ''}`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><div class="empty-title">No events found</div><p>Try adjusting filters</p></div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(e => {
+    const cfg = typeConfig[e.type] || typeConfig.Seminar;
+    const pct = Math.round((e.registered / e.seats) * 100);
+    const isFull = e.registered >= e.seats;
+    const isRegistered = myRegisteredEventIds.includes(e.id);
+    return `<div class="event-card" style="animation:fadeIn 0.3s ease">
+      ${isRegistered ? '<span class="registered-tag">✓ Registered</span>' : ''}
+      <div class="event-card-header">
+        <span class="event-type-badge ${cfg.cls}">${cfg.icon} ${e.type}</span>
+        <span style="font-size:0.78rem;color:var(--text-muted);font-weight:600;white-space:nowrap">${e.dept}</span>
+      </div>
+      <div class="event-card-body">
+        <div class="event-title">${e.name}</div>
+        <div class="event-meta">
+          <div class="event-meta-item"><span class="meta-icon">📅</span>${formatDate(e.date)} · ${e.time}</div>
+          <div class="event-meta-item"><span class="meta-icon">📍</span>${e.venue}</div>
+          ${e.speaker ? `<div class="event-meta-item"><span class="meta-icon">🎙️</span>${e.speaker}</div>` : ''}
+        </div>
+        <div class="event-desc">${e.desc.substring(0,100)}…</div>
+      </div>
+      <div class="event-card-footer">
+        <div class="seats-bar">
+          <div class="seats-text"><span>${isFull ? '🔴 Full' : `${e.seats - e.registered} seats left`}</span><span>${e.registered}/${e.seats}</span></div>
+          <div class="progress-track"><div class="progress-fill ${pct >= 85 ? 'danger' : ''}" style="width:${pct}%"></div></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-secondary btn-sm" onclick="viewEvent(${e.id})">Details</button>
+          ${isFull ? '<button class="btn btn-sm" style="opacity:.4" disabled>Full</button>'
+            : isRegistered ? '<button class="btn btn-success btn-sm" onclick="openFeedbackModal(${e.id})">Feedback</button>'
+            : `<button class="btn btn-primary btn-sm" onclick="openRegisterModal(${e.id})">Register</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterEvents() { renderEvents(); }
+function clearFilters() {
+  ['searchInput','typeFilter','deptFilter','dateFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderEvents();
+}
+function sortEvents(by) {
+  if (by === 'date') events.sort((a,b) => a.date.localeCompare(b.date));
+  else events.sort((a,b) => a.name.localeCompare(b.name));
+  renderEvents();
+}
+
+// ─── MY EVENTS ────────────────────────────────────────────────────
+function renderMyEvents() {
+  const container = document.getElementById('myRegistrations');
+  const noRegs = document.getElementById('noRegs');
+  const myEvents = events.filter(e => myRegisteredEventIds.includes(e.id));
+  if (!myEvents.length) {
+    container.innerHTML = '';
+    noRegs.style.display = 'block';
+    return;
+  }
+  noRegs.style.display = 'none';
+  container.innerHTML = myEvents.map(e => {
+    const cfg = typeConfig[e.type] || typeConfig.Seminar;
+    return `<div class="reg-card">
+      <div class="reg-icon" style="background:${cfg.bg}">${cfg.icon}</div>
+      <div class="reg-info">
+        <div class="reg-title">${e.name}</div>
+        <div class="reg-meta">📅 ${formatDate(e.date)} · 📍 ${e.venue} · 🏛️ ${e.dept}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="reg-status status-confirmed">✓ Confirmed</span>
+        <button class="btn btn-secondary btn-sm" onclick="openFeedbackModal(${e.id})">⭐ Feedback</button>
+        <button class="btn btn-danger btn-sm" onclick="cancelReg(${e.id})">Cancel</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cancelReg(id) {
+  myRegisteredEventIds = myRegisteredEventIds.filter(x => x !== id);
+  const ev = events.find(e => e.id === id);
+  if (ev && ev.registered > 0) ev.registered--;
+  renderMyEvents();
+  toast('Registration cancelled.', 'info');
+}
+
+// ─── ADMIN TABLE ─────────────────────────────────────────────────
+function renderAdminTable() {
+  const q = (document.getElementById('adminSearch')?.value || '').toLowerCase();
+  const type = document.getElementById('adminTypeFilter')?.value || '';
+  const dept = document.getElementById('adminDeptFilter')?.value || '';
+  const filtered = events.filter(e => {
+    if (q && !e.name.toLowerCase().includes(q)) return false;
+    if (type && e.type !== type) return false;
+    if (dept && e.dept !== dept) return false;
+    return true;
+  });
+  document.getElementById('adminEventCount').textContent = `${filtered.length} records`;
+  const tbody = document.getElementById('adminTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--text-muted)">No events match filters</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(e => {
+    const cfg = typeConfig[e.type] || typeConfig.Seminar;
+    const pct = Math.round((e.registered / e.seats) * 100);
+    const isFull = e.registered >= e.seats;
+    return `<tr>
+      <td style="color:var(--text-muted);font-family:monospace">#${String(e.id).padStart(3,'0')}</td>
+      <td style="font-weight:600;font-family:'Syne',sans-serif">${e.name}</td>
+      <td><span class="event-type-badge ${cfg.cls}">${cfg.icon} ${e.type}</span></td>
+      <td>${e.dept}</td>
+      <td>${formatDate(e.date)}</td>
+      <td style="color:var(--text-muted)">${e.venue}</td>
+      <td>${e.seats}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-track" style="width:60px"><div class="progress-fill ${pct >= 85 ? 'danger' : ''}" style="width:${pct}%"></div></div>
+          <span style="font-size:0.8rem;color:${isFull ? 'var(--danger)' : 'var(--text-muted)'}">${e.registered}${isFull ? ' 🔴' : ''}</span>
+        </div>
+      </td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editEvent(${e.id})">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEvent(${e.id})">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  updateStats();
+}
+
+function renderRegTable() {
+  const tbody = document.getElementById('regTableBody');
+  tbody.innerHTML = registrations.map((r, i) => {
+    const ev = events.find(e => e.id === r.eventId);
+    return `<tr>
+      <td style="color:var(--text-muted)">${i + 1}</td>
+      <td style="font-weight:600">${r.studentName}</td>
+      <td style="font-family:monospace;color:var(--accent2)">${r.roll}</td>
+      <td>${ev ? ev.name : '—'}</td>
+      <td>${r.dept}</td>
+      <td style="color:var(--text-muted)">${r.date}</td>
+      <td><span class="reg-status status-${r.status}">${r.status === 'confirmed' ? '✓ Confirmed' : '⏳ Pending'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────────
+function renderCharts() {
+  // By type
+  const types = ['Workshop','Seminar','Technical','Cultural','Sports'];
+  const typeData = types.map(t => ({ label: t, val: events.filter(e => e.type === t).reduce((s, e) => s + e.registered, 0) }));
+  const maxT = Math.max(...typeData.map(d => d.val));
+  const colors = ['#f59e0b','#3b82f6','#10b981','#f472b6','#a78bfa'];
+  document.getElementById('typeChart').innerHTML = typeData.map((d, i) => `
+    <div class="bar-row">
+      <div class="bar-label">${d.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.val/maxT)*100)}%;background:${colors[i]}"></div></div>
+      <div class="bar-val" style="color:${colors[i]}">${d.val}</div>
+    </div>`).join('');
+
+  // By dept
+  const depts = ['CSE','ECE','MBA','Mechanical','Civil','General'];
+  const deptData = depts.map(d => ({ label: d, val: events.filter(e => e.dept === d).reduce((s, e) => s + e.registered, 0) }));
+  const maxD = Math.max(...deptData.map(d => d.val));
+  document.getElementById('deptChart').innerHTML = deptData.map((d, i) => `
+    <div class="bar-row">
+      <div class="bar-label">${d.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round((d.val/maxD)*100)}%;background:${colors[i % colors.length]}"></div></div>
+      <div class="bar-val">${d.val}</div>
+    </div>`).join('');
+
+  // Seat util
+  const top6 = events.slice().sort((a,b) => b.registered/b.seats - a.registered/a.seats).slice(0,6);
+  document.getElementById('seatChart').innerHTML = top6.map((e, i) => {
+    const pct = Math.round((e.registered / e.seats) * 100);
+    return `<div class="bar-row">
+      <div class="bar-label" style="font-size:0.72rem">${e.name.split(' ').slice(0,2).join(' ')}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#10b981'}"></div></div>
+      <div class="bar-val">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  // Monthly trend
+  const months = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const monthVals = [18, 34, 52, 78, 112, 53];
+  const maxM = Math.max(...monthVals);
+  document.getElementById('monthChart').innerHTML = months.map((m, i) => `
+    <div class="bar-row">
+      <div class="bar-label">${m}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round((monthVals[i]/maxM)*100)}%;background:linear-gradient(90deg,#3b82f6,#06b6d4)"></div></div>
+      <div class="bar-val">${monthVals[i]}</div>
+    </div>`).join('');
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'register-modal') populateEventDropdown();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+function populateEventDropdown() {
+  const sel = document.getElementById('reg-event');
+  sel.innerHTML = '<option value="">Select Event</option>' +
+    events.filter(e => e.registered < e.seats).map(e => `<option value="${e.id}">${e.name} (${e.seats - e.registered} seats)</option>`).join('');
+}
+
+function openRegisterModal(id) {
+  if (myRegisteredEventIds.includes(id)) { toast('Already registered!', 'info'); return; }
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  openModal('register-modal');
+  document.getElementById('regEventName').textContent = ev.name;
+  const sel = document.getElementById('reg-event');
+  populateEventDropdown();
+  sel.value = id;
+}
+
+// ─── VALIDATION ───────────────────────────────────────────────────
+function validate(id, errId, condition) {
+  const el = document.getElementById(id);
+  const err = document.getElementById(errId);
+  if (!condition) { el.classList.add('error'); err.classList.add('show'); return false; }
+  el.classList.remove('error'); err.classList.remove('show'); return true;
+}
+
+function submitRegistration() {
+  const name = document.getElementById('reg-name').value.trim();
+  const roll = document.getElementById('reg-roll').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const dept = document.getElementById('reg-dept').value;
+  const evId = parseInt(document.getElementById('reg-event').value);
+  let ok = true;
+  if (!validate('reg-name','err-reg-name', name.length >= 3)) ok = false;
+  if (!validate('reg-roll','err-reg-roll', roll.length >= 4)) ok = false;
+  if (!validate('reg-email','err-reg-email', /\S+@\S+\.\S+/.test(email))) ok = false;
+  if (!validate('reg-dept','err-reg-dept', dept !== '')) ok = false;
+  if (!validate('reg-event','err-reg-event', evId > 0)) ok = false;
+  if (!ok) return;
+
+  const ev = events.find(e => e.id === evId);
+  if (ev.registered >= ev.seats) { toast('No seats available!', 'error'); return; }
+  ev.registered++;
+  myRegisteredEventIds.push(evId);
+  registrations.push({ id: registrations.length + 1, studentName: name, roll, eventId: evId, dept, date: new Date().toISOString().split('T')[0], status: 'confirmed' });
+  closeModal('register-modal');
+  document.getElementById('reg-name').value = '';
+  document.getElementById('reg-roll').value = '';
+  document.getElementById('reg-email').value = '';
+  toast(`Registered for "${ev.name}" successfully!`, 'success');
+  renderEvents();
+  updateStats();
+}
+
+// ─── EVENT CRUD ───────────────────────────────────────────────────
+function editEvent(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  document.getElementById('eventFormTitle').textContent = 'Edit Event';
+  document.getElementById('editEventId').value = id;
+  document.getElementById('ev-name').value = ev.name;
+  document.getElementById('ev-type').value = ev.type;
+  document.getElementById('ev-dept').value = ev.dept;
+  document.getElementById('ev-date').value = ev.date;
+  document.getElementById('ev-time').value = ev.time;
+  document.getElementById('ev-venue').value = ev.venue;
+  document.getElementById('ev-seats').value = ev.seats;
+  document.getElementById('ev-speaker').value = ev.speaker || '';
+  document.getElementById('ev-desc').value = ev.desc;
+  openModal('add-event-modal');
+}
+
+function saveEvent() {
+  const name = document.getElementById('ev-name').value.trim();
+  const type = document.getElementById('ev-type').value;
+  const dept = document.getElementById('ev-dept').value;
+  const date = document.getElementById('ev-date').value;
+  const venue = document.getElementById('ev-venue').value.trim();
+  const seats = parseInt(document.getElementById('ev-seats').value);
+  const desc = document.getElementById('ev-desc').value.trim();
+  let ok = true;
+  if (!validate('ev-name','err-ev-name', name.length >= 5)) ok = false;
+  if (!validate('ev-type','err-ev-type', type !== '')) ok = false;
+  if (!validate('ev-dept','err-ev-dept', dept !== '')) ok = false;
+  if (!validate('ev-date','err-ev-date', date !== '')) ok = false;
+  if (!validate('ev-venue','err-ev-venue', venue.length >= 2)) ok = false;
+  if (!validate('ev-seats','err-ev-seats', seats > 0)) ok = false;
+  if (!validate('ev-desc','err-ev-desc', desc.length >= 20)) ok = false;
+  if (!ok) return;
+
+  const editId = parseInt(document.getElementById('editEventId').value);
+  const newEvt = { name, type, dept, date, time: document.getElementById('ev-time').value, venue, seats, speaker: document.getElementById('ev-speaker').value, desc, registered: 0 };
+  if (editId) {
+    const idx = events.findIndex(e => e.id === editId);
+    newEvt.id = editId;
+    newEvt.registered = events[idx].registered;
+    events[idx] = newEvt;
+    toast(`Event "${name}" updated.`, 'success');
+  } else {
+    newEvt.id = nextId++;
+    events.push(newEvt);
+    toast(`Event "${name}" created.`, 'success');
+  }
+  closeModal('add-event-modal');
+  document.getElementById('editEventId').value = '';
+  document.getElementById('eventFormTitle').textContent = 'Add New Event';
+  renderAdminTable();
+  renderEvents();
+  updateStats();
+}
+
+function deleteEvent(id) {
+  const ev = events.find(e => e.id === id);
+  deleteTargetId = id;
+  document.getElementById('deleteEventName').textContent = ev ? `"${ev.name}"` : 'this event';
+  openModal('delete-modal');
+}
+function confirmDelete() {
+  events = events.filter(e => e.id !== deleteTargetId);
+  myRegisteredEventIds = myRegisteredEventIds.filter(x => x !== deleteTargetId);
+  closeModal('delete-modal');
+  renderAdminTable();
+  renderEvents();
+  toast('Event deleted.', 'info');
+  updateStats();
+}
+
+// ─── VIEW EVENT DETAIL ────────────────────────────────────────────
+function viewEvent(id) {
+  const ev = events.find(e => e.id === id);
+  if (!ev) return;
+  viewingEventId = id;
+  const cfg = typeConfig[ev.type] || typeConfig.Seminar;
+  const pct = Math.round((ev.registered / ev.seats) * 100);
+  document.getElementById('viewTitle').textContent = ev.name;
+  document.getElementById('viewBody').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+      <span class="event-type-badge ${cfg.cls}">${cfg.icon} ${ev.type}</span>
+      <span class="event-type-badge" style="background:rgba(100,116,139,0.15);color:var(--text-muted);border:1px solid var(--border)">🏛️ ${ev.dept}</span>
+    </div>
+    <p style="color:var(--text-soft);line-height:1.7;margin-bottom:1.25rem">${ev.desc}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Date & Time</div>
+        <div style="font-weight:600">${formatDate(ev.date)} · ${ev.time}</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Venue</div>
+        <div style="font-weight:600">${ev.venue}</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Speaker</div>
+        <div style="font-weight:600">${ev.speaker || '—'}</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Seats</div>
+        <div style="font-weight:600">${ev.seats - ev.registered} of ${ev.seats} available</div>
+      </div>
+    </div>
+    <div class="seats-bar">
+      <div class="seats-text"><span>Seat Utilization</span><span>${pct}%</span></div>
+      <div class="progress-track" style="height:8px"><div class="progress-fill ${pct >= 85 ? 'danger' : ''}" style="width:${pct}%"></div></div>
+    </div>`;
+  openModal('view-event-modal');
+}
+
+function registerFromView() {
+  closeModal('view-event-modal');
+  if (viewingEventId) openRegisterModal(viewingEventId);
+}
+
+// ─── FEEDBACK ────────────────────────────────────────────────────
+function openFeedbackModal(id) { viewingEventId = id; currentStars = 0; setStars(0); openModal('feedback-modal'); }
+function setStars(n) {
+  currentStars = n;
+  document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('lit', i < n));
+}
+function submitFeedback() {
+  if (!currentStars) { toast('Please select a rating.', 'error'); return; }
+  closeModal('feedback-modal');
+  toast(`Thanks for your ${currentStars}★ feedback!`, 'success');
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span class="toast-msg">${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => { t.style.animation = 'toast-in 0.3s ease reverse'; setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────
+function formatDate(d) {
+  const [y, m, day] = d.split('-');
+  return new Date(y, m-1, day).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+
+// ─── INIT ────────────────────────────────────────────────────────
+renderEvents();
+updateStats();
+</script>
+</body>
+</html>
